@@ -208,7 +208,11 @@ class SMCGPUMonitor:
                 #    print("Pressed Ctrl+C")
                 #    self.state=-1
                 ######################################
+                cur_time=time.time()
                 self.on_monitor()
+                cost_time=time.time()-cur_time
+                sys.stdout.write('Used Time(secs): %f\n' % cost_time)
+                sys.stdout.flush()
             elif(self.state==-1):
                 #State#End: Exiting
                 self._running=False
