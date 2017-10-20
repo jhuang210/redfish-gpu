@@ -7,6 +7,7 @@ import re
 import threading
 import time
 import urllib3
+from urllib2 import HTTPError, URLError
 import Queue
 
 urllib3.disable_warnings()
@@ -116,6 +117,7 @@ class SMCGPUMonitor:
         for obj in self.gpu_obj:
             rf_obj=obj.getRedfishObj()
             new_thread=threading.Thread(target=rf_obj.redfish_login, name='Thread-'+rf_obj.getHost())
+            new_thread.daemon=True
             tmp_threads.append(new_thread)
             new_thread.start()
         for t in tmp_threads:
@@ -127,6 +129,7 @@ class SMCGPUMonitor:
         for obj in self.gpu_obj:
             rf_obj=obj.getRedfishObj()
             new_thread=threading.Thread(target=rf_obj.redfish_logout, name='Thread-'+rf_obj.getHost())
+            new_thread.daemon=True
             tmp_threads.append(new_thread)
             new_thread.start()
         for t in tmp_threads:
@@ -154,6 +157,7 @@ class SMCGPUMonitor:
         try:
             for obj in self.gpu_obj:
                 new_thread=threading.Thread(target=obj.getFormattedSEL_Thread, args=[output_queue])
+                new_thread.daemon=True
                 tmp_threads.append(new_thread)
                 new_thread.start()
             for t in tmp_threads:
@@ -163,8 +167,13 @@ class SMCGPUMonitor:
             sys.stdout.write('\n')
             sys.stdout.flush()
             time.sleep(1)
-        except(KeyboardInterrupt,SystemExit):
-            print("Pressed Ctrl+C")
+        except(KeyboardInterrupt,SystemExit) as e1:
+            sys.stderr.write('Catch Error: %s\n' % str(e1.__class__.__name__))
+            sys.stdout.write("Pressed Ctrl+C\n")           
+            self.state=-1
+        except(URLError,HTTPError,KeyError) as e2:
+            sys.stderr.write('Catch Error: %s\n' % str(e2.__class__.__name__))
+            sys.stdout.write("Network is down\n")
             self.state=-1
         sys.stdout.flush()
     def on_execute(self):
